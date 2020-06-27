@@ -23,6 +23,7 @@
 
 ```python
 import psycopg2 as pg
+import pandas as pd
 
 class DBexecutor:
     
@@ -77,7 +78,7 @@ df
 
 
 
-<div>
+<div> 
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -106,8 +107,6 @@ df
 
 
 ```python
-import pandas as pd
-
 db = DBexecutor(params)
 
 df = pd.read_sql("""
@@ -269,7 +268,7 @@ import datetime
 
 db = DBexecutor(params)
 
-db.curs.execute("""
+df = pd.read_sql("""
                 select * 
                 from books_students bs 
                 inner join student s on student_id = s.id
@@ -277,20 +276,16 @@ db.curs.execute("""
                 inner join middle_name mn on middle_name_id = mn.id
                 inner join last_name ln2 on last_name_id = ln2.id
                 inner join faculty f on faculty_id = f.id
-                """)
-
-data = db.curs.fetchall()
-df = pd.DataFrame(data)
-data = df[[3, 4, 11, 13, 15, 17]]
-data.columns = ['issue', 'return', 'first_name', 'middle_name', 'last_name', 'faculty']
-filter_after = data['issue'] >= datetime.date(2020, 1, 1)
-filter_before = data['issue'] <= datetime.date(2020, 6, 26)
+                """, db.conn)
+data = df[['date_of_issue', 'date_of_return', 'first_name', 'middle_name', 'last_name', 'faculty']]
+filter_after = data['date_of_issue'] >= datetime.date(2020, 1, 1)
+filter_before = data['date_of_issue'] <= datetime.date(2020, 6, 26)
 data = data.loc[filter_before & filter_after]
 ```
 
 
 ```python
-data['delta'] = data['return'] - data['issue'] - pd.Timedelta(30, unit='d')
+data['delta'] = data['date_of_return'] - data['date_of_issue'] - pd.Timedelta(30, unit='d')
 group_data = data.groupby(['first_name', 'middle_name', 'last_name', 'faculty']).agg(['sum', 'count']).reset_index()
 group_data['av_delay'] = group_data[['delta'][0]]['sum'] / group_data[['delta'][0]]['count']
 filter_delay = group_data['av_delay'].dt.round(freq = 'D') > pd.Timedelta(15, unit='d')
