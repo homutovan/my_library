@@ -16,9 +16,7 @@
 
 ![ER-диаграмма БД](diag.png)
 
-2. Напишите SQL-запрос, который бы возвращал самого популярного автора за год. Запрос должен основываться на модели данных, которую вы описали в задании 1. 
-
-Запишем указанный запрос и, для наглядности, выполним его средствами Python:
+Создадим базу данных на основе данной модели:
 
 
 ```python
@@ -57,7 +55,47 @@ params = {
         }
 
 db = DBexecutor(params)
+```
 
+
+```python
+db_schema = [
+            """CREATE TABLE first_name (id serial PRIMARY KEY, first_name varchar(100));""",
+            """CREATE TABLE middle_name (id serial PRIMARY KEY, middle_name varchar(100));""",
+            """CREATE TABLE last_name (id serial PRIMARY KEY, last_name varchar(100));""",
+            """CREATE TABLE faculty (id serial PRIMARY KEY, faculty varchar(100));""",
+            """CREATE TABLE book_name (id serial PRIMARY KEY, book_name varchar(100));""",
+            """CREATE TABLE publishing (id serial PRIMARY KEY, publishing varchar(100));""",
+            """CREATE TABLE student (id serial PRIMARY KEY, first_name_id 
+                INTEGER REFERENCES first_name(id), middle_name_id 
+                INTEGER REFERENCES  middle_name(id), last_name_id 
+                INTEGER REFERENCES  last_name(id), faculty_id 
+                INTEGER REFERENCES  faculty(id));""",
+            """CREATE TABLE author (id serial PRIMARY KEY, first_name_id 
+                INTEGER REFERENCES first_name(id), middle_name_id 
+                INTEGER REFERENCES  middle_name(id), last_name_id 
+                INTEGER REFERENCES  last_name(id));""",
+            """CREATE TABLE books (id serial PRIMARY KEY, name_id 
+            INTEGER REFERENCES book_name(id), author_id 
+            INTEGER REFERENCES  author(id), publishing_id 
+            INTEGER REFERENCES  publishing(id), year date);""",
+            """CREATE TABLE books_students (id serial PRIMARY KEY, book_id 
+            INTEGER REFERENCES books(id), student_id 
+            INTEGER REFERENCES  student(id), date_of_issue date, date_of_return date);"""
+            ]
+
+for query in db_schema:
+    db.curs.execute(query)
+```
+
+Наполнение базы данных происходит из файлов authors, books, publishing и faculty, соответствующий код приведен в файле parse.py
+
+2. Напишите SQL-запрос, который бы возвращал самого популярного автора за год. Запрос должен основываться на модели данных, которую вы описали в задании 1. 
+
+Запишем указанный запрос и, для наглядности, выполним его средствами Python:
+
+
+```python
 df = pd.read_sql("""
                 select first_name, middle_name, last_name
                 from books_students bs
